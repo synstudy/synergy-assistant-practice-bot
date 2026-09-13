@@ -46,6 +46,14 @@ def health():
     }
 
 
+@app.get("/api/welcome")
+def welcome():
+    return {
+        "reply": engine.welcome(),
+        "quick_replies": list(knowledge_base.default_quick_replies),
+    }
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(payload: ChatRequest):
     session_id = payload.session_id or str(uuid4())

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { resetSession, sendMessage } from "../api";
+import { fetchWelcome, resetSession, sendMessage } from "../api";
 import type { ChatMessage } from "../types";
 
 function createMessage(role: ChatMessage["role"], text: string): ChatMessage {
@@ -24,12 +24,26 @@ export default function Chat() {
       return;
     }
     initialized.current = true;
-    void submit("/start");
+    void loadWelcome();
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  async function loadWelcome() {
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await fetchWelcome();
+      setMessages([createMessage("bot", data.reply)]);
+      setQuickReplies(data.quick_replies ?? []);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Не удалось загрузить приветствие");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function submit(text: string) {
     const value = text.trim();
@@ -62,7 +76,7 @@ export default function Chat() {
     setMessages([]);
     setQuickReplies([]);
     setError(null);
-    void submit("/start");
+    void loadWelcome();
   }
 
   return (

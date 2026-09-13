@@ -22,6 +22,19 @@ export function setSessionId(sessionId: string): void {
   localStorage.setItem(SESSION_KEY, sessionId);
 }
 
+export interface WelcomeResponse {
+  reply: string;
+  quick_replies: string[];
+}
+
+export async function fetchWelcome(): Promise<WelcomeResponse> {
+  const response = await fetch("/api/welcome");
+  if (!response.ok) {
+    throw new Error(`Сервер вернул ошибку ${response.status}`);
+  }
+  return (await response.json()) as WelcomeResponse;
+}
+
 export async function sendMessage(message: string): Promise<ChatResponse> {
   const response = await fetch("/api/chat", {
     method: "POST",

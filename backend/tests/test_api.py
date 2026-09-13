@@ -13,6 +13,14 @@ def test_health():
     assert body["intents"] > 0
 
 
+def test_welcome():
+    response = client.get("/api/welcome")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reply"]
+    assert body["quick_replies"]
+
+
 def test_chat_creates_session_and_replies():
     response = client.post("/api/chat", json={"message": "Привет"})
     assert response.status_code == 200
