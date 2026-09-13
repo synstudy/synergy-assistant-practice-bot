@@ -1,0 +1,46 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DB_PATH: /data/app.db
+      KNOWLEDGE_BASE_PATH: /app/data/knowledge_base.json
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+    volumes:
+      - chatbot-data:/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  bot:
+    build: ./backend
+    command: ["python", "-m", "app.telegram_bot"]
+    environment:
+      DB_PATH: /data/app.db
+      KNOWLEDGE_BASE_PATH: /app/data/knowledge_base.json
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    volumes:
+      - chatbot-data:/data
+    depends_on:
+      - backend
+    profiles:
+      - bot
+
+volumes:
+  chatbot-data:
