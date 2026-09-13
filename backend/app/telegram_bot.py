@@ -1,9 +1,12 @@
+import asyncio
 import os
 
 from telegram import Update
+from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from . import storage
+from .delays import reply_delay
 from .engine import build_engine
 
 engine = build_engine()
@@ -29,6 +32,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = engine.process(_session_id(update), update.message.text)
+    delay = reply_delay()
+    if delay > 0:
+        await context.bot.send_chat_action(
+            chat_id=update.effective_chat.id, action=ChatAction.TYPING
+        )
+        await asyncio.sleep(delay)
     reply = result["reply"]
     if result["quick_replies"]:
         reply += "\n\nВарианты: " + " • ".join(result["quick_replies"])

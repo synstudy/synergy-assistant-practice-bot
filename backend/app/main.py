@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -6,6 +7,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import storage, weather
+from .delays import reply_delay
 from .engine import build_engine
 from .schemas import ChatRequest, ChatResponse, LeadModel, SessionRequest
 
@@ -61,9 +63,12 @@ def welcome():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(payload: ChatRequest):
+async def chat(payload: ChatRequest):
     session_id = payload.session_id or str(uuid4())
     result = engine.process(session_id, payload.message)
+    delay = reply_delay()
+    if delay > 0:
+        await asyncio.sleep(delay)
     return ChatResponse(
         session_id=session_id,
         reply=result["reply"],
