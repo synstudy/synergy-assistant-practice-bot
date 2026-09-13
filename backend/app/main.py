@@ -5,13 +5,12 @@ from uuid import uuid4
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import storage
-from .dialog import DialogEngine
-from .knowledge import KnowledgeBase
+from . import storage, weather
+from .engine import build_engine
 from .schemas import ChatRequest, ChatResponse, LeadModel, SessionRequest
 
-knowledge_base = KnowledgeBase.load()
-engine = DialogEngine(knowledge_base)
+engine = build_engine()
+knowledge_base = engine.kb
 
 
 @asynccontextmanager
@@ -22,8 +21,8 @@ async def lifespan(_app):
 
 app = FastAPI(
     title="Synergy Chatbot API",
-    description="API чат-бота Университета «Синергия» с распознаванием интентов и приёмом заявок.",
-    version="1.0.0",
+    description="API чат-бота Университета «Синергия»: интенты, бытовые темы и приём заявок.",
+    version="1.1.0",
     lifespan=lifespan,
 )
 
@@ -42,6 +41,8 @@ def health():
         "status": "ok",
         "knowledge_base": knowledge_base.meta.get("name"),
         "intents": len(knowledge_base.intents),
+        "sources": knowledge_base.source_paths,
+        "weather_enabled": weather.enabled(),
     }
 
 

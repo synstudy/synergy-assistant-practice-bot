@@ -381,6 +381,7 @@
   "flows": {
     "lead": {
       "trigger": "lead_request",
+      "store": "lead",
       "cancel_keywords": ["отмена", "стоп", "не надо", "передумал", "не хочу"],
       "steps": [
         {

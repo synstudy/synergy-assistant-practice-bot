@@ -4,7 +4,10 @@ services:
     environment:
       DB_PATH: /data/app.db
       KNOWLEDGE_BASE_PATH: /app/data/knowledge_base.json
+      SMALLTALK_PATH: /app/data/smalltalk.json
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      WEATHER_ENABLED: ${WEATHER_ENABLED:-true}
+      WEATHER_TIMEOUT: ${WEATHER_TIMEOUT:-5}
     volumes:
       - chatbot-data:/data
     ports:
@@ -34,7 +37,10 @@ services:
     environment:
       DB_PATH: /data/app.db
       KNOWLEDGE_BASE_PATH: /app/data/knowledge_base.json
+      SMALLTALK_PATH: /app/data/smalltalk.json
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      WEATHER_ENABLED: ${WEATHER_ENABLED:-true}
+      WEATHER_TIMEOUT: ${WEATHER_TIMEOUT:-5}
     volumes:
       - chatbot-data:/data
     depends_on:

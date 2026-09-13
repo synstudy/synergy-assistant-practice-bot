@@ -14,7 +14,7 @@ def test_greeting_reply_has_quick_replies():
 
 
 def test_fallback_for_unknown():
-    result = engine.process("test-fallback", "Расскажи анекдот про ежа")
+    result = engine.process("test-fallback", "Квантовая запутанность в лагранжевом формализме")
     assert result["intent"] is None
     assert result["reply"]
     assert result["state"] == "idle"
@@ -25,16 +25,16 @@ def test_lead_flow_success():
     storage.reset_session(session_id)
 
     step = engine.process(session_id, "Хочу оставить заявку")
-    assert step["state"] == "lead.name"
+    assert step["state"] == "flow.lead.name"
 
     step = engine.process(session_id, "Иван")
-    assert step["state"] == "lead.phone"
+    assert step["state"] == "flow.lead.phone"
 
     step = engine.process(session_id, "123")
-    assert step["state"] == "lead.phone"
+    assert step["state"] == "flow.lead.phone"
 
     step = engine.process(session_id, "+7 999 123-45-67")
-    assert step["state"] == "lead.program"
+    assert step["state"] == "flow.lead.program"
 
     step = engine.process(session_id, "Менеджмент")
     assert step["state"] == "idle"

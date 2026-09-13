@@ -42,6 +42,6 @@ def test_ai():
 
 
 def test_unknown_returns_none():
-    intent, score = engine.detect_intent("Как приготовить борщ")
+    intent, score = engine.detect_intent("Квантовая запутанность в лагранжевом формализме")
     assert intent is None
     assert score == 0.0

@@ -4,11 +4,9 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from . import storage
-from .dialog import DialogEngine
-from .knowledge import KnowledgeBase
+from .engine import build_engine
 
-knowledge_base = KnowledgeBase.load()
-engine = DialogEngine(knowledge_base)
+engine = build_engine()
 
 
 def _session_id(update: Update):
