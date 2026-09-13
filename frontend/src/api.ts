@@ -18,7 +18,7 @@ export function getSessionId(): string {
   return sessionId;
 }
 
-export function setSessionId(sessionId: string): void {
+function setSessionId(sessionId: string): void {
   localStorage.setItem(SESSION_KEY, sessionId);
 }
 

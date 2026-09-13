@@ -57,6 +57,12 @@ frontend/
 docker-compose.yml   backend + frontend + bot (профиль)
 ```
 
+## Требования
+
+- Docker и Docker Compose — для запуска стека.
+- Python 3.12 — для локального бэкенда и тестов.
+- Node.js 20 — для локальной разработки фронтенда.
+
 ## Быстрый старт (Docker)
 
 ```bash
@@ -88,7 +94,7 @@ uvicorn app.main:app --reload
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -139,6 +145,16 @@ python -m tools.build_kb --check  # проверить, что файлы соо
 (используется `build_kb`; может применяться отдельно через `python -m
 tools.md_to_kb <файл>`).
 
+### Как добавить новую тему
+
+1. Добавьте раздел с заголовками `##`/`###` в существующий `sources/*.md` или
+   создайте новый файл.
+2. Для нового файла добавьте запись в `kb/config.json` (`source`, `target`,
+   `overlay`, `min_level`) и при необходимости — overlay с `flows`/системными
+   интентами.
+3. Если нужны привычные формулировки, добавьте их в `keyword_overrides` overlay.
+4. Выполните `python -m tools.build_kb`, затем перезапустите сервис.
+
 ## Бытовые темы
 
 - **Погода** — `app/weather.py` обращается к бесплатному Open-Meteo (без токена).
@@ -172,7 +188,7 @@ curl -X POST http://localhost:8000/api/chat \
 {
   "session_id": "…",
   "reply": "У Университета «Синергия» 94 филиала…",
-  "quick_replies": [],
+  "quick_replies": ["Направления подготовки", "Формы обучения", "Филиалы", "Оставить заявку"],
   "state": "idle",
   "intent": "regionalnaya-set"
 }
@@ -185,6 +201,7 @@ curl -X POST http://localhost:8000/api/chat \
 | `DB_PATH`             | путь к файлу SQLite                         |
 | `KNOWLEDGE_BASE_PATH` | путь к `knowledge_base.json`                |
 | `SMALLTALK_PATH`      | путь к `smalltalk.json`                     |
+| `CORS_ORIGINS`        | список origin через запятую или `*`          |
 | `WEATHER_ENABLED`     | `true`/`false` — живой прогноз или догадка   |
 | `WEATHER_TIMEOUT`     | таймаут запроса к Open-Meteo, секунды        |
 | `ADMIN_TOKEN`         | токен для `/api/leads`; пусто — доступ открыт |
