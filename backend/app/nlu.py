@@ -7,7 +7,7 @@ _clean_re = re.compile(r"[^a-zа-я0-9\s\-]", re.IGNORECASE)
 _space_re = re.compile(r"\s+")
 
 
-def normalize(text):
+def _normalize(text):
     lowered = text.lower().replace("ё", "е")
     cleaned = _clean_re.sub(" ", lowered)
     return _space_re.sub(" ", cleaned).strip()
@@ -15,7 +15,7 @@ def normalize(text):
 
 def lemmatize(text):
     result = []
-    for token in normalize(text).split():
+    for token in _normalize(text).split():
         parts = [part for part in token.split("-") if part]
         if not parts:
             continue

@@ -50,7 +50,6 @@ class DialogEngine:
         state = session.get("state", "idle")
         if state.startswith("lead."):
             session["state"] = "flow." + state
-            session["flow"] = "lead"
             if "lead" in session:
                 session.setdefault("data", {}).update(session.pop("lead"))
         session.setdefault("data", {})
@@ -132,7 +131,6 @@ class DialogEngine:
         session = self._new_session()
         first_step = flow["steps"][0]
         session["state"] = f"flow.{flow_id}.{first_step['key']}"
-        session["flow"] = flow_id
         storage.save_session(session_id, session)
         return self._reply(first_step["prompt"], [], session["state"], intent_id)
 
