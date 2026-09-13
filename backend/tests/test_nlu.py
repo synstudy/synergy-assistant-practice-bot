@@ -30,10 +30,29 @@ def test_organization_phrases_recognized():
         "Сколько студентов",
         "Выручка",
         "Кто ректор?",
+        "Сколько стоит обучение",
+        "Как поступить?",
+        "Контакты",
+        "Бюджетные места",
+        "Рейтинги",
+        "Гарантия трудоустройства",
     ]
     for phrase in phrases:
         intent, _ = engine.detect_intent(phrase)
         assert intent is not None, phrase
+
+
+def test_role_intents_are_specific():
+    cases = {
+        "Кто ректор?": "rektor-universiteta",
+        "Кто президент?": "prezident-universiteta",
+        "Генеральный директор": "generalnyy-direktor-universiteta",
+        "Функции ректора": "funktsii-rektora",
+    }
+    for phrase, intent_id in cases.items():
+        intent, _ = engine.detect_intent(phrase)
+        assert intent is not None, phrase
+        assert intent["id"] == intent_id, phrase
 
 
 def test_inflected_keywords():
@@ -41,8 +60,8 @@ def test_inflected_keywords():
     assert intent is not None
 
 
-def test_removed_topics_fall_back():
-    for phrase in ["рецепт борща", "куда поехать", "сколько стоит обучение", "как поступить", "контакты"]:
+def test_out_of_domain_topics_fall_back():
+    for phrase in ["рецепт борща", "куда поехать", "расписание автобусов"]:
         intent, _ = engine.detect_intent(phrase)
         assert intent is None, phrase
 
