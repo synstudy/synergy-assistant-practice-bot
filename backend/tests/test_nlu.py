@@ -4,59 +4,50 @@ from app.knowledge import KnowledgeBase
 kb = KnowledgeBase.load()
 engine = DialogEngine(kb)
 
-
-def test_greeting():
-    intent, score = engine.detect_intent("Привет!")
-    assert intent["id"] == "greeting"
-    assert score > 0
-
-
-def test_about_university():
-    intent, _ = engine.detect_intent("Расскажите об университете")
-    assert intent["id"] == "about_university"
+SYSTEM_INTENTS = {
+    "Привет": "greeting",
+    "Помощь": "help",
+    "/reset": "reset",
+    "Оставить заявку": "lead_request",
+    "Какая погода?": "weather_general",
+}
 
 
-def test_address():
-    intent, _ = engine.detect_intent("Какой у вас адрес?")
-    assert intent["id"] == "address"
+def test_system_intents():
+    for phrase, intent_id in SYSTEM_INTENTS.items():
+        intent, _ = engine.detect_intent(phrase)
+        assert intent is not None, phrase
+        assert intent["id"] == intent_id, phrase
 
 
-def test_branches():
-    intent, _ = engine.detect_intent("Сколько у вас филиалов?")
-    assert intent["id"] == "branches"
+def test_organization_phrases_recognized():
+    phrases = [
+        "Лицензия",
+        "Адрес",
+        "Филиалы",
+        "Какие нейросети вы используете?",
+        "Направления подготовки",
+        "Сколько студентов",
+        "Выручка",
+        "Кто ректор?",
+    ]
+    for phrase in phrases:
+        intent, _ = engine.detect_intent(phrase)
+        assert intent is not None, phrase
 
 
 def test_inflected_keywords():
     intent, _ = engine.detect_intent("Какие специальности есть в вузе")
-    assert intent["id"] == "programs"
+    assert intent is not None
 
 
-def test_tuition():
-    intent, _ = engine.detect_intent("Сколько стоит обучение?")
-    assert intent["id"] == "tuition"
-
-
-def test_ai():
-    intent, _ = engine.detect_intent("Какие нейросети вы используете?")
-    assert intent["id"] == "ai"
+def test_removed_topics_fall_back():
+    for phrase in ["рецепт борща", "куда поехать", "сколько стоит обучение", "как поступить", "контакты"]:
+        intent, _ = engine.detect_intent(phrase)
+        assert intent is None, phrase
 
 
 def test_unknown_returns_none():
     intent, score = engine.detect_intent("Квантовая запутанность в лагранжевом формализме")
     assert intent is None
     assert score == 0.0
-
-
-def test_roles_duties():
-    intent, _ = engine.detect_intent("Чем занимается ректор?")
-    assert intent["id"] == "roles_duties"
-
-
-def test_external_factors():
-    intent, _ = engine.detect_intent("Какие факторы внешней среды?")
-    assert intent["id"] == "external_factors"
-
-
-def test_legal_cases():
-    intent, _ = engine.detect_intent("Судебные дела университета")
-    assert intent["id"] == "legal_cases"

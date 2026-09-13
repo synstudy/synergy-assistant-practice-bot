@@ -1,0 +1,16 @@
+{
+  "targets": [
+    {
+      "source": "../sources/organization-synergy.md",
+      "target": "data/knowledge_base.json",
+      "overlay": "kb/knowledge_base.overlay.json",
+      "min_level": 2
+    },
+    {
+      "source": "../sources/everyday-smalltalk.md",
+      "target": "data/smalltalk.json",
+      "overlay": "kb/smalltalk.overlay.json",
+      "min_level": 2
+    }
+  ]
+}
