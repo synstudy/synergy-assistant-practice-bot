@@ -45,3 +45,18 @@ def test_unknown_returns_none():
     intent, score = engine.detect_intent("Квантовая запутанность в лагранжевом формализме")
     assert intent is None
     assert score == 0.0
+
+
+def test_roles_duties():
+    intent, _ = engine.detect_intent("Чем занимается ректор?")
+    assert intent["id"] == "roles_duties"
+
+
+def test_external_factors():
+    intent, _ = engine.detect_intent("Какие факторы внешней среды?")
+    assert intent["id"] == "external_factors"
+
+
+def test_legal_cases():
+    intent, _ = engine.detect_intent("Судебные дела университета")
+    assert intent["id"] == "legal_cases"
