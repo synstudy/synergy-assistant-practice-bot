@@ -77,3 +77,41 @@ def test_weather_flow_retries_unknown_city(monkeypatch):
     result = engine.process(session_id, "Абракадабрск")
     assert result["state"] == "flow.weather.city"
     assert "не нашёл" in result["reply"].lower()
+
+
+def test_weather_flow_uses_city_from_message(monkeypatch):
+    monkeypatch.setattr(weather, "_http_get_json", _success_transport())
+    engine = build_engine()
+    engine.register_extractor("city", lambda text: "Москва")
+    session_id = "weather-city"
+    storage.reset_session(session_id)
+
+    result = engine.process(session_id, "Какая погода в Москве?")
+    assert result["state"] == "idle"
+    assert "Москва" in result["reply"]
+
+
+def test_weather_prompt_offers_cancel(monkeypatch):
+    engine = build_engine()
+    session_id = "weather-cancel-chip"
+    storage.reset_session(session_id)
+
+    step = engine.process(session_id, "Какая погода?")
+    assert step["state"] == "flow.weather.city"
+    assert "Отмена" in step["quick_replies"]
+
+
+def test_weather_unknown_city_can_be_escaped_by_question(monkeypatch):
+    monkeypatch.setattr(weather, "_http_get_json", lambda url, params: {"results": []})
+    engine = build_engine()
+    session_id = "weather-escape"
+    storage.reset_session(session_id)
+
+    engine.process(session_id, "Какая погода?")
+    engine.process(session_id, "Абракадабрск")
+    result = engine.process(session_id, "Кто ректор в Синергии?")
+    assert result["state"] == "idle"
+    assert result["intent"] == "rektor-universiteta"
+    assert "Прервал предыдущий сценарий" in result["reply"]
+
+

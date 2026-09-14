@@ -9,6 +9,7 @@
       "steps": [
         {
           "key": "city",
+          "extract": "city",
           "prompt": "В каком городе узнать погоду?",
           "validate": "nonempty",
           "error": "Напишите, пожалуйста, название города."

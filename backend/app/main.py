@@ -6,7 +6,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import storage, weather
+from . import nlp_spacy, storage, weather
 from .delays import reply_delay
 from .engine import build_engine
 from .schemas import ChatRequest, ChatResponse, LeadModel, SessionRequest
@@ -18,6 +18,11 @@ knowledge_base = engine.kb
 @asynccontextmanager
 async def lifespan(_app):
     storage.init_db()
+    if nlp_spacy.enabled():
+        try:
+            nlp_spacy.get_nlp()
+        except Exception:
+            pass
     yield
 
 
@@ -51,6 +56,7 @@ def health():
         "intents": len(knowledge_base.intents),
         "sources": knowledge_base.source_paths,
         "weather_enabled": weather.enabled(),
+        "spacy": {"enabled": nlp_spacy.enabled(), "model": nlp_spacy.model_name()},
     }
 
 

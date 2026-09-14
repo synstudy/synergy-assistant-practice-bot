@@ -1,35 +1,59 @@
 import random
 import re
 
-from . import storage
+from . import nlp_spacy, storage
 from .nlu import lemmatize
 
 _PHONE_RE = re.compile(r"\D")
+_QUESTION_STARTS = {
+    "кто", "что", "как", "какой", "какая", "какие", "где",
+    "когда", "сколько", "почему", "куда", "чем", "каков",
+}
+_FLOW_QUICK_REPLIES = ["Отмена"]
 
 
 class DialogEngine:
     def __init__(self, knowledge_base, resolvers=None):
         self.kb = knowledge_base
-        self._index = self._build_index()
         self.threshold = float(self.kb.settings.get("match_threshold", 1.0))
         self.resolvers = dict(resolvers or {})
+        self.extractors = {}
+        self.spacy_matching = self._init_spacy_matching()
+        self._index = self._build_index()
+
+    def _init_spacy_matching(self):
+        if not nlp_spacy.matching_enabled():
+            return False
+        try:
+            nlp_spacy.get_nlp()
+        except Exception:
+            return False
+        return True
 
     def register_resolver(self, name, handler):
         self.resolvers[name] = handler
+
+    def register_extractor(self, name, handler):
+        self.extractors[name] = handler
+
+    def _lemmas(self, text):
+        if self.spacy_matching:
+            return frozenset(nlp_spacy.content_lemmas(text))
+        return frozenset(lemmatize(text))
 
     def _build_index(self):
         index = []
         for intent in self.kb.intents:
             patterns = []
             for keyword in intent.get("keywords", []):
-                lemmas = frozenset(lemmatize(keyword))
+                lemmas = self._lemmas(keyword)
                 if lemmas:
                     patterns.append((lemmas, len(lemmas)))
             index.append((intent, patterns))
         return index
 
     def detect_intent(self, text):
-        message_lemmas = set(lemmatize(text))
+        message_lemmas = set(self._lemmas(text))
         best_intent = None
         best_score = 0.0
         for intent, patterns in self._index:
@@ -119,7 +143,7 @@ class DialogEngine:
 
         flow_id, flow = self._flow_by_trigger(intent["id"])
         if flow:
-            return self._start_flow(session_id, flow_id, flow, intent["id"])
+            return self._start_flow(session_id, flow_id, flow, intent["id"], text)
 
         replies = intent.get("responses") or ["Пока не могу ответить на это."]
         quick_replies = intent.get("quick_replies")
@@ -127,12 +151,42 @@ class DialogEngine:
             quick_replies = self._default_quick_replies()
         return self._reply(random.choice(replies), list(quick_replies), "idle", intent["id"])
 
-    def _start_flow(self, session_id, flow_id, flow, intent_id):
+    def _start_flow(self, session_id, flow_id, flow, intent_id, text=""):
         session = self._new_session()
-        first_step = flow["steps"][0]
-        session["state"] = f"flow.{flow_id}.{first_step['key']}"
-        storage.save_session(session_id, session)
-        return self._reply(first_step["prompt"], [], session["state"], intent_id)
+        for step in flow["steps"]:
+            value = self._extract(step.get("extract"), text) if step.get("extract") else None
+            if not value:
+                session["state"] = f"flow.{flow_id}.{step['key']}"
+                storage.save_session(session_id, session)
+                return self._reply(step["prompt"], list(_FLOW_QUICK_REPLIES), session["state"], intent_id)
+            session["data"][step["key"]] = value
+        return self._complete_flow(session_id, session, flow_id, flow)
+
+    def _extract(self, name, text):
+        handler = self.extractors.get(name) if name else None
+        if handler is None or not text:
+            return None
+        try:
+            return handler(text)
+        except Exception:
+            return None
+
+    def _looks_like_question(self, text):
+        if "?" in text:
+            return True
+        lemmas = lemmatize(text)
+        return bool(lemmas) and lemmas[0] in _QUESTION_STARTS
+
+    def _maybe_escape_flow(self, session_id, flow, text):
+        if not self._looks_like_question(text):
+            return None
+        intent, _score = self.detect_intent(text)
+        if intent is None or intent["id"] == flow.get("trigger"):
+            return None
+        storage.save_session(session_id, self._new_session())
+        result = self.process(session_id, text)
+        result["reply"] = "Прервал предыдущий сценарий. " + result["reply"]
+        return result
 
     def _handle_flow(self, session_id, session, text):
         flow_id, step_key = self._parse_flow_state(session["state"])
@@ -150,6 +204,10 @@ class DialogEngine:
                 f"{flow_id}_cancel",
             )
 
+        escape = self._maybe_escape_flow(session_id, flow, text)
+        if escape is not None:
+            return escape
+
         step = next((item for item in flow["steps"] if item["key"] == step_key), None)
         if step is None:
             storage.save_session(session_id, self._new_session())
@@ -158,7 +216,7 @@ class DialogEngine:
         value = text.strip()
         error = self._validate(step, value)
         if error:
-            return self._reply(error, [], session["state"], flow_id)
+            return self._reply(error, list(_FLOW_QUICK_REPLIES), session["state"], flow_id)
 
         session["data"][step["key"]] = value
         index = flow["steps"].index(step)
@@ -167,7 +225,7 @@ class DialogEngine:
             next_step = flow["steps"][index + 1]
             session["state"] = f"flow.{flow_id}.{next_step['key']}"
             storage.save_session(session_id, session)
-            return self._reply(next_step["prompt"], [], session["state"], flow_id)
+            return self._reply(next_step["prompt"], list(_FLOW_QUICK_REPLIES), session["state"], flow_id)
 
         return self._complete_flow(session_id, session, flow_id, flow)
 
@@ -183,7 +241,7 @@ class DialogEngine:
                     session["data"].pop(retry_step, None)
                     session["state"] = f"flow.{flow_id}.{retry_step}"
                     storage.save_session(session_id, session)
-                    return self._reply(result.get("reply", ""), [], session["state"], flow_id)
+                    return self._reply(result.get("reply", ""), list(_FLOW_QUICK_REPLIES), session["state"], flow_id)
                 reply_text = result.get("reply", "")
             else:
                 reply_text = str(result)

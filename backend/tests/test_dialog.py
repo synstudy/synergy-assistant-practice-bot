@@ -60,3 +60,34 @@ def test_reset_command():
     result = engine.process(session_id, "/reset")
     assert result["intent"] == "reset"
     assert result["state"] == "idle"
+
+
+def test_lead_flow_escapes_on_question():
+    session_id = "test-lead-escape"
+    storage.reset_session(session_id)
+
+    step = engine.process(session_id, "Хочу оставить заявку")
+    assert step["state"] == "flow.lead.name"
+
+    result = engine.process(session_id, "Кто ректор?")
+    assert result["state"] == "idle"
+    assert result["intent"] == "rektor-universiteta"
+
+
+def test_spacy_matching_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("SPACY_ENABLED", raising=False)
+    monkeypatch.delenv("SPACY_MATCHING", raising=False)
+    local = DialogEngine(KnowledgeBase.load())
+    assert local.spacy_matching is False
+
+
+def test_spacy_matching_uses_content_lemmas(monkeypatch):
+    from app import nlp_spacy
+
+    monkeypatch.setenv("SPACY_ENABLED", "true")
+    monkeypatch.delenv("SPACY_MATCHING", raising=False)
+    monkeypatch.setattr(nlp_spacy, "get_nlp", lambda: (lambda text: []))
+    monkeypatch.setattr(nlp_spacy, "content_lemmas", lambda text: {"погода"})
+    local = DialogEngine(KnowledgeBase.load())
+    assert local.spacy_matching is True
+

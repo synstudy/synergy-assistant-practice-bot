@@ -11,6 +11,9 @@ services:
       WEATHER_TIMEOUT: ${WEATHER_TIMEOUT:-5}
       REPLY_DELAY_MIN: ${REPLY_DELAY_MIN:-2}
       REPLY_DELAY_MAX: ${REPLY_DELAY_MAX:-4}
+      SPACY_ENABLED: ${SPACY_ENABLED:-true}
+      SPACY_MATCHING: ${SPACY_MATCHING:-true}
+      SPACY_MODEL: ${SPACY_MODEL:-ru_core_news_sm}
     volumes:
       - chatbot-data:/data
     ports:
@@ -40,6 +43,9 @@ services:
       WEATHER_TIMEOUT: ${WEATHER_TIMEOUT:-5}
       REPLY_DELAY_MIN: ${REPLY_DELAY_MIN:-2}
       REPLY_DELAY_MAX: ${REPLY_DELAY_MAX:-4}
+      SPACY_ENABLED: ${SPACY_ENABLED:-true}
+      SPACY_MATCHING: ${SPACY_MATCHING:-true}
+      SPACY_MODEL: ${SPACY_MODEL:-ru_core_news_sm}
     volumes:
       - chatbot-data:/data
     profiles:
